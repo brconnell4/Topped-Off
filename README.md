@@ -6,7 +6,7 @@ A lightweight World of Warcraft addon for **TBC (Burning Crusade) Classic / Anni
 
 - **Target counts** — "always keep 20 Rune of Teleportation in my bags." Have 7, walk up to the vendor, it buys 13.
 - **Works with anything a vendor sells for gold** — reagents, ammo, poison mats, sharpening stones, vendor food & water, etc.
-- **Auto-buy at vendors** — tops up automatically the moment you open any merchant that stocks your items. Or force it with `/to buy`.
+- **Auto-buy at vendors** — tops up automatically the moment you open any merchant that stocks your items. A **Restock now** button in the window does it on demand.
 - **Gold reserve** — set a floor and it will never spend you below it.
 - **Enable/disable per item** — pause one without deleting it.
 - **Per-character** — your mage's list is separate from your rogue's, automatically.
