@@ -5,7 +5,7 @@ local defaults = {
 	autoBuy = true,
 	goldFloor = 0, -- gold to keep in reserve; never spend below this
 	items = {},    -- { { id = <itemID>, name = "...", qty = <target in bags>, enabled = true, icon = <texID> }, ... }
-	window = { point = "CENTER", x = 0, y = 0, shown = false },
+	window = { point = "CENTER", x = 0, y = 0, w = 340, h = 400, shown = false },
 }
 
 local function applyDefaults(dst, src)

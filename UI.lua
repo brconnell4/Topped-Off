@@ -10,9 +10,11 @@ local ROW_H = 26
 local QUESTION = "Interface\\Icons\\INV_Misc_QuestionMark"
 
 local function saveWindow()
-	local point, _, _, x, y = ns.frame:GetPoint()
+	local f = ns.frame
+	local point, _, _, x, y = f:GetPoint()
 	local w = ns.DB().window
 	w.point, w.x, w.y = point, x, y
+	w.w, w.h = math.floor(f:GetWidth()), math.floor(f:GetHeight())
 end
 
 -- pull an item off the cursor (drag & drop) onto the list
@@ -118,11 +120,13 @@ function ns.BuildWindow()
 
 	local f = CreateFrame("Frame", "ToppedOffFrame", UIParent, "BackdropTemplate")
 	ns.frame = f
-	f:SetSize(340, 400)
+	f:SetSize(db.window.w or 340, db.window.h or 400)
 	f:SetPoint(db.window.point or "CENTER", UIParent, db.window.point or "CENTER", db.window.x or 0, db.window.y or 0)
 	f:SetBackdrop(BACKDROP)
 	f:SetBackdropColor(0, 0, 0, 0.92)
 	f:SetFrameStrata("HIGH")
+	f:SetResizable(true)
+	if f.SetResizeBounds then f:SetResizeBounds(280, 240) elseif f.SetMinResize then f:SetMinResize(280, 240) end
 	f:SetClampedToScreen(true)
 	f:SetMovable(true)
 	f:EnableMouse(true)
@@ -289,6 +293,29 @@ function ns.BuildWindow()
 	empty:SetText("No items yet — add what you always want in your bags.")
 	empty:SetTextColor(1, 0.82, 0)
 	ns.emptyText = empty
+
+	-- resize grip (bottom-right)
+	local grip = CreateFrame("Button", nil, f)
+	grip:SetSize(16, 16)
+	grip:SetPoint("BOTTOMRIGHT", 0, 0)
+	grip:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
+	grip:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
+	grip:SetScript("OnMouseDown", function() f:StartSizing("BOTTOMRIGHT") end)
+	grip:SetScript("OnMouseUp", function() f:StopMovingOrSizing() saveWindow() ns.RefreshList() end)
+
+	-- resize grip (bottom-left, mirrored)
+	local gripL = CreateFrame("Button", nil, f)
+	gripL:SetSize(16, 16)
+	gripL:SetPoint("BOTTOMLEFT", 0, 0)
+	local gTex = gripL:CreateTexture(nil, "ARTWORK")
+	gTex:SetTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
+	gTex:SetTexCoord(1, 0, 0, 1)
+	gTex:SetAllPoints()
+	gripL:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
+	local gHi = gripL:GetHighlightTexture()
+	if gHi then gHi:SetTexCoord(1, 0, 0, 1) end
+	gripL:SetScript("OnMouseDown", function() f:StartSizing("BOTTOMLEFT") end)
+	gripL:SetScript("OnMouseUp", function() f:StopMovingOrSizing() saveWindow() ns.RefreshList() end)
 
 	if not db.window.shown then f:Hide() end
 	ns.RefreshList()
