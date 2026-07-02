@@ -4,6 +4,7 @@
 ## Author: Branden
 ## Version: 0.1
 ## SavedVariablesPerCharacter: ToppedOffDB
+## X-Curse-Project-ID: 1595012
 
 Core.lua
 UI.lua
