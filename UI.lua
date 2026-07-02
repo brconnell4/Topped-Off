@@ -203,6 +203,20 @@ function ns.BuildWindow()
 	buyNow:SetText("Restock now")
 	buyNow:SetScript("OnClick", function() ns.Restock(true) end)
 
+	-- manual refresh of the "Own" counts (also updates live on bag changes)
+	local refresh = CreateFrame("Button", nil, f)
+	refresh:SetSize(18, 18)
+	refresh:SetPoint("RIGHT", buyNow, "LEFT", -4, 0)
+	refresh:SetNormalTexture("Interface\\Buttons\\UI-RefreshButton")
+	refresh:SetHighlightTexture("Interface\\Buttons\\UI-RefreshButton")
+	local rh = refresh:GetHighlightTexture()
+	if rh then rh:SetBlendMode("ADD") rh:SetAlpha(0.4) end
+	refresh:SetScript("OnClick", function() ns.RefreshList() end)
+	refresh:SetScript("OnEnter", function(self)
+		GameTooltip:SetOwner(self, "ANCHOR_LEFT") GameTooltip:SetText("Refresh counts") GameTooltip:Show()
+	end)
+	refresh:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
 	-- add-item row
 	local addLbl = f:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
 	addLbl:SetPoint("TOPLEFT", 12, -90)

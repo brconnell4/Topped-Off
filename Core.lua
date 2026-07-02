@@ -110,6 +110,7 @@ local f = CreateFrame("Frame")
 f:RegisterEvent("ADDON_LOADED")
 f:RegisterEvent("PLAYER_LOGIN")
 f:RegisterEvent("MERCHANT_SHOW")
+f:RegisterEvent("BAG_UPDATE_DELAYED")
 f:SetScript("OnEvent", function(_, event, arg1)
 	if event == "ADDON_LOADED" then
 		if arg1 ~= ADDON then return end
@@ -121,6 +122,9 @@ f:SetScript("OnEvent", function(_, event, arg1)
 	elseif event == "MERCHANT_SHOW" then
 		-- small delay so the merchant's item list is fully populated
 		C_Timer.After(0.2, function() ns.Restock(false) end)
+	elseif event == "BAG_UPDATE_DELAYED" then
+		-- keep the "Own" counts live as bags change (buying, using, looting)
+		if ns.frame and ns.frame:IsShown() and ns.RefreshList then ns.RefreshList() end
 	end
 end)
 
