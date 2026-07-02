@@ -1,0 +1,45 @@
+# Topped Off
+
+A lightweight World of Warcraft addon for **TBC (Burning Crusade) Classic / Anniversary** that keeps your consumables and reagents **topped off** automatically. Set the items and amounts you always want in your bags once, and it buys the shortfall at any vendor that sells them — no more manually restocking runes, ammo, poisons, food, or water every time you pass a vendor.
+
+## Features
+
+- **Target counts** — "always keep 20 Rune of Teleportation in my bags." Have 7, walk up to the vendor, it buys 13.
+- **Works with anything a vendor sells for gold** — reagents, ammo, poison mats, sharpening stones, vendor food & water, etc.
+- **Auto-buy at vendors** — tops up automatically the moment you open any merchant that stocks your items. Or force it with `/to buy`.
+- **Gold reserve** — set a floor and it will never spend you below it.
+- **Enable/disable per item** — pause one without deleting it.
+- **Per-character** — your mage's list is separate from your rogue's, automatically.
+- **Lives in the game options** — no extra window to manage: **ESC → Options → AddOns → Topped Off**.
+
+## Usage
+
+- `/to` — open the config page (in the Blizzard AddOns settings)
+- `/to buy` — force a top-up at the vendor you currently have open
+
+**Adding items:** type the item's exact name in the *Add* box and set a target quantity (shift-click or dragging an item in also works when your bags are accessible). Set your **gold reserve**, toggle **Auto-buy at vendors**, and you're done.
+
+## What it won't buy
+
+- **Conjured** food/water and anything not sold by a vendor (it can only buy what's on the shelf).
+- Items bought with **honor / arena points / badges / tokens** — only gold-priced goods are auto-bought, so it never touches your currencies.
+
+## Install
+
+Copy the `ToppedOff` folder into your client's AddOns directory:
+
+```
+World of Warcraft/_anniversary_/Interface/AddOns/ToppedOff/
+```
+
+Restart the client and enable **Topped Off** at the character-select screen.
+
+## Files
+
+| File | Purpose |
+|------|---------|
+| `Core.lua` | config, vendor buy logic, events, slash commands |
+| `UI.lua` | the options page + item list |
+| `ToppedOff.toc` | addon manifest (per-character SavedVariables) |
+
+Built for Interface **20505** (TBC Anniversary).
