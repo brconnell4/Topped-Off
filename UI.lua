@@ -75,6 +75,7 @@ function ns.RefreshList()
 	ns.listOffset = math.min(ns.listOffset or 0, maxOffset)
 
 	ns.emptyText:SetShown(#items == 0)
+	if ns.header then ns.header:SetShown(#items > 0) end
 
 	for i = 1, visible do
 		local idx = i + (ns.listOffset or 0)
@@ -89,7 +90,7 @@ function ns.RefreshList()
 			row.name:SetText(e.name or "?")
 			local have = GetItemCount(e.id or e.name) or 0
 			local want = tonumber(e.qty) or 0
-			row.have:SetText("have " .. have)
+			row.have:SetText(tostring(have))
 			if have >= want then row.have:SetTextColor(0.4, 0.8, 0.4) else row.have:SetTextColor(0.9, 0.6, 0.3) end
 			row.qty:SetText(tostring(e.qty or 0))
 			row.enable:SetChecked(e.enabled)
@@ -131,9 +132,40 @@ function ns.BuildWindow()
 	f:SetScript("OnReceiveDrag", addFromCursor)
 	f:SetScript("OnMouseUp", function() if GetCursorInfo() then addFromCursor() end end)
 
-	local title = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	title:SetPoint("TOP", 0, -12)
+	-- black -> red -> black banner across the top
+	local banner = CreateFrame("Frame", nil, f)
+	banner:SetPoint("TOPLEFT", 5, -5)
+	banner:SetPoint("TOPRIGHT", -5, -5)
+	banner:SetHeight(18)
+	local RED, BLK = { 0.66, 0.09, 0.09, 0.95 }, { 0.03, 0.01, 0.01, 0.95 }
+	local function fade(tex, c1, c2)
+		tex:SetColorTexture(1, 1, 1)
+		if tex.SetGradient and CreateColor then
+			tex:SetGradient("HORIZONTAL", CreateColor(unpack(c1)), CreateColor(unpack(c2)))
+		elseif tex.SetGradientAlpha then
+			tex:SetGradientAlpha("HORIZONTAL", c1[1], c1[2], c1[3], c1[4], c2[1], c2[2], c2[3], c2[4])
+		else
+			tex:SetColorTexture(0.4, 0.06, 0.06, 0.95)
+		end
+	end
+	local lt = banner:CreateTexture(nil, "BORDER")
+	lt:SetPoint("TOPLEFT", banner, "TOPLEFT", 0, 0)
+	lt:SetPoint("BOTTOMRIGHT", banner, "BOTTOM", 0, 0)
+	fade(lt, BLK, RED)
+	local rt = banner:CreateTexture(nil, "BORDER")
+	rt:SetPoint("TOPLEFT", banner, "TOP", 0, 0)
+	rt:SetPoint("BOTTOMRIGHT", banner, "BOTTOMRIGHT", 0, 0)
+	fade(rt, RED, BLK)
+	local bLine = banner:CreateTexture(nil, "ARTWORK")
+	bLine:SetColorTexture(0, 0, 0, 0.5)
+	bLine:SetHeight(1)
+	bLine:SetPoint("BOTTOMLEFT", banner, "BOTTOMLEFT", 0, 0)
+	bLine:SetPoint("BOTTOMRIGHT", banner, "BOTTOMRIGHT", 0, 0)
+
+	local title = banner:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+	title:SetPoint("CENTER", banner, "CENTER", 0, 0)
 	title:SetText("Topped Off")
+	title:SetTextColor(1, 1, 1)
 
 	local close = CreateFrame("Button", nil, f, "UIPanelCloseButton")
 	close:SetPoint("TOPRIGHT", 2, 2)
@@ -172,9 +204,10 @@ function ns.BuildWindow()
 	buyNow:SetScript("OnClick", function() ns.Restock(true) end)
 
 	-- add-item row
-	local addLbl = f:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+	local addLbl = f:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
 	addLbl:SetPoint("TOPLEFT", 12, -90)
-	addLbl:SetText("Add: type a name, or shift-click / drag an item |cff808080(from your bags)|r")
+	addLbl:SetText("Add: type an item name, or drag an item from your bags")
+	addLbl:SetTextColor(1, 0.82, 0)
 	local addBox = CreateFrame("EditBox", nil, f, "InputBoxTemplate")
 	addBox:SetSize(180, 20)
 	addBox:SetPoint("TOPLEFT", 14, -104)
@@ -202,9 +235,32 @@ function ns.BuildWindow()
 	addBtn:SetScript("OnClick", doAdd)
 	addBox:SetScript("OnEnterPressed", doAdd)
 
+	-- column headers (align with the row layout below)
+	local hdr = CreateFrame("Frame", nil, f)
+	hdr:SetPoint("TOPLEFT", 10, -132)
+	hdr:SetPoint("TOPRIGHT", -10, -132)
+	hdr:SetHeight(14)
+	ns.header = hdr
+	local function hlabel(text, anchor, x)
+		local fs = hdr:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+		fs:SetPoint(anchor, hdr, anchor, x, 0)
+		fs:SetText(text)
+		fs:SetTextColor(1, 0.82, 0)
+		return fs
+	end
+	hlabel("Item", "LEFT", 28)
+	hlabel("Own", "RIGHT", -102)
+	hlabel("Buy", "RIGHT", -58)
+	hlabel("On", "RIGHT", -25)
+	local hLine = hdr:CreateTexture(nil, "ARTWORK")
+	hLine:SetColorTexture(1, 1, 1, 0.15)
+	hLine:SetHeight(1)
+	hLine:SetPoint("BOTTOMLEFT", hdr, "BOTTOMLEFT", 0, -1)
+	hLine:SetPoint("BOTTOMRIGHT", hdr, "BOTTOMRIGHT", 0, -1)
+
 	-- item list
 	local list = CreateFrame("Frame", nil, f)
-	list:SetPoint("TOPLEFT", 10, -134)
+	list:SetPoint("TOPLEFT", 10, -150)
 	list:SetPoint("BOTTOMRIGHT", -10, 12)
 	ns.listContent = list
 	list:EnableMouseWheel(true)
@@ -214,9 +270,10 @@ function ns.BuildWindow()
 		ns.listOffset = math.max(0, (ns.listOffset or 0) - d)
 		ns.RefreshList()
 	end)
-	local empty = list:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+	local empty = list:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
 	empty:SetPoint("TOP", 0, -6)
 	empty:SetText("No items yet — add what you always want in your bags.")
+	empty:SetTextColor(1, 0.82, 0)
 	ns.emptyText = empty
 
 	if not db.window.shown then f:Hide() end

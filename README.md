@@ -16,7 +16,7 @@ A lightweight World of Warcraft addon for **TBC (Burning Crusade) Classic / Anni
 
 - `/to` — open the restock window (or the *Open Topped Off* button in ESC → Options → AddOns)
 
-**Adding items:** type the item's exact name in the *Add* box and set a target quantity, then **Add**. You can also **shift-click or drag an item from your bags** (this only works from your own bags, not from a vendor's list). Set your **gold reserve**, toggle **Auto-buy at vendors**, and you're done.
+**Adding items:** type the item's exact name in the *Add* box and set a target quantity, then **Add**. You can also **drag an item from your bags** into the window (bags only — not the vendor's list). Set your **gold reserve**, toggle **Auto-buy at vendors**, and you're done.
 
 ## What it won't buy
 
