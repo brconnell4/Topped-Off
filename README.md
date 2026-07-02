@@ -10,11 +10,11 @@ A lightweight World of Warcraft addon for **TBC (Burning Crusade) Classic / Anni
 - **Gold reserve** — set a floor and it will never spend you below it.
 - **Enable/disable per item** — pause one without deleting it.
 - **Per-character** — your mage's list is separate from your rogue's, automatically.
-- **Lives in the game options** — no extra window to manage: **ESC → Options → AddOns → Topped Off**.
+- **Movable window** — opens with `/to` or an *Open Topped Off* button in **ESC → Options → AddOns → Topped Off**, and stays open while you shop, so you can add items you see at the vendor.
 
 ## Usage
 
-- `/to` — open the config page (in the Blizzard AddOns settings)
+- `/to` — open the restock window
 - `/to buy` — force a top-up at the vendor you currently have open
 
 **Adding items:** type the item's exact name in the *Add* box and set a target quantity (shift-click or dragging an item in also works when your bags are accessible). Set your **gold reserve**, toggle **Auto-buy at vendors**, and you're done.

@@ -9,12 +9,17 @@ local BACKDROP = {
 local ROW_H = 26
 local QUESTION = "Interface\\Icons\\INV_Misc_QuestionMark"
 
+local function saveWindow()
+	local point, _, _, x, y = ns.frame:GetPoint()
+	local w = ns.DB().window
+	w.point, w.x, w.y = point, x, y
+end
+
 -- pull an item off the cursor (drag & drop) onto the list
 local function addFromCursor()
 	local kind, id, link = GetCursorInfo()
 	if kind == "item" then
-		local qty = tonumber(ns.addQty and ns.addQty:GetText()) or 1
-		ns.AddItem(link or id, qty)
+		ns.AddItem(link or id, tonumber(ns.addQty and ns.addQty:GetText()) or 1)
 		ClearCursor()
 	end
 end
@@ -104,85 +109,103 @@ function ns.RefreshList()
 end
 
 ----------------------------------------------------------------------
--- options page (lives in ESC > Options > AddOns)
+-- movable window (works alongside an open vendor + bags)
 ----------------------------------------------------------------------
-function ns.BuildOptions()
-	if ns.panel then return end
+function ns.BuildWindow()
+	if ns.frame then return end
 	local db = ns.DB()
 
-	local o = CreateFrame("Frame", "ToppedOffOptions", nil, "BackdropTemplate")
-	ns.panel = o
-	o:Hide()
+	local f = CreateFrame("Frame", "ToppedOffFrame", UIParent, "BackdropTemplate")
+	ns.frame = f
+	f:SetSize(340, 400)
+	f:SetPoint(db.window.point or "CENTER", UIParent, db.window.point or "CENTER", db.window.x or 0, db.window.y or 0)
+	f:SetBackdrop(BACKDROP)
+	f:SetBackdropColor(0, 0, 0, 0.92)
+	f:SetFrameStrata("HIGH")
+	f:SetClampedToScreen(true)
+	f:SetMovable(true)
+	f:EnableMouse(true)
+	f:RegisterForDrag("LeftButton")
+	f:SetScript("OnDragStart", f.StartMoving)
+	f:SetScript("OnDragStop", function(self) self:StopMovingOrSizing() saveWindow() end)
+	f:SetScript("OnReceiveDrag", addFromCursor)
+	f:SetScript("OnMouseUp", function() if GetCursorInfo() then addFromCursor() end end)
 
-	local head = o:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-	head:SetPoint("TOPLEFT", 16, -16)
-	head:SetText("Topped Off")
+	local title = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+	title:SetPoint("TOP", 0, -12)
+	title:SetText("Topped Off")
 
-	local desc = o:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-	desc:SetPoint("TOPLEFT", 16, -40)
-	desc:SetText("Set the items and amounts you always want in your bags; it tops them up at any vendor that sells them.")
+	local close = CreateFrame("Button", nil, f, "UIPanelCloseButton")
+	close:SetPoint("TOPRIGHT", 2, 2)
+	close:SetScript("OnClick", function() f:Hide() db.window.shown = false end)
 
 	-- auto-buy master toggle
-	local auto = CreateFrame("CheckButton", nil, o, "UICheckButtonTemplate")
+	local auto = CreateFrame("CheckButton", nil, f, "UICheckButtonTemplate")
 	auto:SetSize(24, 24)
-	auto:SetPoint("TOPLEFT", 14, -60)
+	auto:SetPoint("TOPLEFT", 10, -34)
 	local autoLbl = auto:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
 	autoLbl:SetPoint("LEFT", auto, "RIGHT", 2, 0)
-	autoLbl:SetText("Auto-buy at vendors  |cff808080(or type /to buy at a vendor)|r")
+	autoLbl:SetText("Auto-buy at vendors")
 	auto:SetChecked(db.autoBuy)
 	auto:SetScript("OnClick", function(self) db.autoBuy = self:GetChecked() and true or false end)
 
 	-- gold reserve floor
-	local floorLbl = o:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-	floorLbl:SetPoint("TOPLEFT", 16, -90)
+	local floorLbl = f:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+	floorLbl:SetPoint("TOPLEFT", 12, -62)
 	floorLbl:SetText("Keep in reserve:")
-	local floorBox = CreateFrame("EditBox", nil, o, "InputBoxTemplate")
-	floorBox:SetSize(70, 18)
+	local floorBox = CreateFrame("EditBox", nil, f, "InputBoxTemplate")
+	floorBox:SetSize(60, 18)
 	floorBox:SetPoint("LEFT", floorLbl, "RIGHT", 10, 0)
 	floorBox:SetAutoFocus(false)
 	floorBox:SetNumeric(true)
 	floorBox:SetText(tostring(db.goldFloor or 0))
 	floorBox:SetScript("OnEnterPressed", function(self) db.goldFloor = tonumber(self:GetText()) or 0 self:ClearFocus() end)
 	floorBox:SetScript("OnEscapePressed", function(self) self:SetText(tostring(db.goldFloor or 0)) self:ClearFocus() end)
-	local gLbl = o:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-	gLbl:SetPoint("LEFT", floorBox, "RIGHT", 4, 0)
-	gLbl:SetText("|cffffd100gold|r")
+	local gLbl = f:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+	gLbl:SetPoint("LEFT", floorBox, "RIGHT", 3, 0)
+	gLbl:SetText("|cffffd100g|r")
+
+	local buyNow = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
+	buyNow:SetSize(90, 20)
+	buyNow:SetPoint("TOPRIGHT", -8, -58)
+	buyNow:SetText("Restock now")
+	buyNow:SetScript("OnClick", function() ns.Restock(true) end)
 
 	-- add-item row
-	local addLbl = o:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-	addLbl:SetPoint("TOPLEFT", 16, -120)
-	addLbl:SetText("Add: type an item name (exact), or shift-click / drag an item")
-	local addBox = CreateFrame("EditBox", nil, o, "InputBoxTemplate")
-	addBox:SetSize(240, 20)
-	addBox:SetPoint("TOPLEFT", 18, -134)
+	local addLbl = f:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+	addLbl:SetPoint("TOPLEFT", 12, -90)
+	addLbl:SetText("Add: type a name, or shift-click / drag an item")
+	local addBox = CreateFrame("EditBox", nil, f, "InputBoxTemplate")
+	addBox:SetSize(180, 20)
+	addBox:SetPoint("TOPLEFT", 14, -104)
 	addBox:SetAutoFocus(false)
 	addBox:SetScript("OnReceiveDrag", addFromCursor)
-	local addQty = CreateFrame("EditBox", nil, o, "InputBoxTemplate")
-	addQty:SetSize(40, 20)
-	addQty:SetPoint("LEFT", addBox, "RIGHT", 14, 0)
+	local addQty = CreateFrame("EditBox", nil, f, "InputBoxTemplate")
+	addQty:SetSize(36, 20)
+	addQty:SetPoint("LEFT", addBox, "RIGHT", 12, 0)
 	addQty:SetAutoFocus(false)
 	addQty:SetNumeric(true)
 	addQty:SetJustifyH("CENTER")
 	addQty:SetText("20")
 	ns.addQty = addQty
-	local addBtn = CreateFrame("Button", nil, o, "UIPanelButtonTemplate")
-	addBtn:SetSize(48, 20)
-	addBtn:SetPoint("LEFT", addQty, "RIGHT", 10, 0)
+	local addBtn = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
+	addBtn:SetSize(44, 20)
+	addBtn:SetPoint("LEFT", addQty, "RIGHT", 8, 0)
 	addBtn:SetText("Add")
 	local function doAdd()
 		local text = addBox:GetText()
 		if text and text ~= "" then
 			ns.AddItem(text, tonumber(addQty:GetText()) or 1)
-			addBox:SetText("") addBox:ClearFocus()
+			addBox:SetText() addBox:ClearFocus()
 		end
 	end
 	addBtn:SetScript("OnClick", doAdd)
 	addBox:SetScript("OnEnterPressed", doAdd)
 
-	-- item list (own mouse-wheel scroll)
-	local list = CreateFrame("Frame", nil, o)
-	list:SetPoint("TOPLEFT", 16, -168)
-	list:SetPoint("BOTTOMRIGHT", -16, 16)
+	-- item list
+	local list = CreateFrame("Frame", nil, f)
+	list:SetPoint("TOPLEFT", 10, -134)
+	list:SetPoint("BOTTOMRIGHT", -10, 12)
 	ns.listContent = list
 	list:EnableMouseWheel(true)
 	list:SetScript("OnReceiveDrag", addFromCursor)
@@ -192,42 +215,60 @@ function ns.BuildOptions()
 		ns.RefreshList()
 	end)
 	local empty = list:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-	empty:SetPoint("TOPLEFT", 2, -4)
-	empty:SetText("No items yet — add what you always want in your bags above.")
+	empty:SetPoint("TOP", 0, -6)
+	empty:SetText("No items yet — add what you always want in your bags.")
 	ns.emptyText = empty
 
-	o:SetScript("OnShow", function() ns.RefreshList() end)
+	if not db.window.shown then f:Hide() end
+	ns.RefreshList()
+end
 
-	-- register into ESC > Options > AddOns, or fall back to a standalone dialog
+function ns.ShowWindow()
+	if not ns.frame then ns.BuildWindow() end
+	ns.frame:Show()
+	ns.DB().window.shown = true
+	ns.RefreshList()
+end
+
+function ns.ToggleWindow()
+	if not ns.frame then ns.BuildWindow() end
+	if ns.frame:IsShown() then
+		ns.frame:Hide() ns.DB().window.shown = false
+	else
+		ns.ShowWindow()
+	end
+end
+
+----------------------------------------------------------------------
+-- ESC > Options > AddOns page: just a launcher for the window
+----------------------------------------------------------------------
+function ns.BuildOptionsPage()
+	if ns.panel then return end
+	local o = CreateFrame("Frame", "ToppedOffOptions")
+	ns.panel = o
+
+	local head = o:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+	head:SetPoint("TOPLEFT", 16, -16)
+	head:SetText("Topped Off")
+
+	local desc = o:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	desc:SetPoint("TOPLEFT", 16, -46)
+	desc:SetWidth(520)
+	desc:SetJustifyH("LEFT")
+	desc:SetText("Your restock list opens in its own movable window so you can use it while a vendor is open "
+		.. "(the game won't let a settings page and a vendor be open at the same time).\n\n"
+		.. "Open the window, add the items and amounts you always want in your bags, then it tops them up at any "
+		.. "vendor that sells them.  Slash: /to  to open,  /to buy  to force a top-up at a vendor.")
+
+	local btn = CreateFrame("Button", nil, o, "UIPanelButtonTemplate")
+	btn:SetSize(170, 26)
+	btn:SetPoint("TOPLEFT", 16, -120)
+	btn:SetText("Open Topped Off")
+	btn:SetScript("OnClick", function() ns.ShowWindow() end)
+
 	if Settings and Settings.RegisterCanvasLayoutCategory then
 		local cat = Settings.RegisterCanvasLayoutCategory(o, "Topped Off")
 		Settings.RegisterAddOnCategory(cat)
 		ns.settingsCategory = cat
-	else
-		o:SetParent(UIParent)
-		o:SetSize(420, 460)
-		o:SetPoint("CENTER")
-		o:SetFrameStrata("DIALOG")
-		o:SetBackdrop(BACKDROP)
-		o:SetBackdropColor(0, 0, 0, 0.95)
-		o:EnableMouse(true)
-		o:SetMovable(true)
-		o:RegisterForDrag("LeftButton")
-		o:SetScript("OnDragStart", o.StartMoving)
-		o:SetScript("OnDragStop", o.StopMovingOrSizing)
-		local closeO = CreateFrame("Button", nil, o, "UIPanelCloseButton")
-		closeO:SetPoint("TOPRIGHT", 2, 2)
-	end
-
-	ns.RefreshList()
-end
-
-function ns.OpenConfig()
-	if not ns.panel then ns.BuildOptions() end
-	if ns.settingsCategory and Settings and Settings.OpenToCategory then
-		local cat = ns.settingsCategory
-		Settings.OpenToCategory((cat.GetID and cat:GetID()) or cat.ID or cat)
-	elseif ns.panel then
-		ns.panel:SetShown(not ns.panel:IsShown())
 	end
 end

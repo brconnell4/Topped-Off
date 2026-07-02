@@ -116,7 +116,8 @@ f:SetScript("OnEvent", function(_, event, arg1)
 		ToppedOffDB = ToppedOffDB or {}
 		applyDefaults(ToppedOffDB, defaults)
 	elseif event == "PLAYER_LOGIN" then
-		if ns.BuildOptions then ns.BuildOptions() end
+		if ns.BuildWindow then ns.BuildWindow() end
+		if ns.BuildOptionsPage then ns.BuildOptionsPage() end
 	elseif event == "MERCHANT_SHOW" then
 		-- small delay so the merchant's item list is fully populated
 		C_Timer.After(0.2, function() ns.Restock(false) end)
@@ -129,7 +130,7 @@ SlashCmdList.TOPPEDOFF = function(msg)
 	msg = (msg or ""):lower():gsub("%s+", "")
 	if msg == "buy" then
 		ns.Restock(true)
-	elseif ns.OpenConfig then
-		ns.OpenConfig()
+	elseif ns.ToggleWindow then
+		ns.ToggleWindow()
 	end
 end
