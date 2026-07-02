@@ -96,11 +96,17 @@ function ns.RefreshList()
 			if have >= want then row.have:SetTextColor(0.4, 0.8, 0.4) else row.have:SetTextColor(0.9, 0.6, 0.3) end
 			row.qty:SetText(tostring(e.qty or 0))
 			row.enable:SetChecked(e.enabled)
+			-- commit the value on Enter AND on losing focus (clicking away / closing / X),
+			-- so you don't have to press Enter for it to save
+			local function commitQty(self)
+				e.qty = tonumber(self:GetText()) or e.qty or 0
+			end
 			row.qty:SetScript("OnEnterPressed", function(self)
-				e.qty = tonumber(self:GetText()) or 0
+				commitQty(self)
 				self:ClearFocus()
 				ns.RefreshList()
 			end)
+			row.qty:SetScript("OnEditFocusLost", commitQty)
 			row.enable:SetScript("OnClick", function(self) e.enabled = self:GetChecked() and true or false end)
 			row.remove:SetScript("OnClick", function() ns.RemoveItem(idx) end)
 			row:Show()
@@ -195,7 +201,9 @@ function ns.BuildWindow()
 	floorBox:SetAutoFocus(false)
 	floorBox:SetNumeric(true)
 	floorBox:SetText(tostring(db.goldFloor or 0))
-	floorBox:SetScript("OnEnterPressed", function(self) db.goldFloor = tonumber(self:GetText()) or 0 self:ClearFocus() end)
+	local function commitFloor(self) db.goldFloor = tonumber(self:GetText()) or 0 end
+	floorBox:SetScript("OnEnterPressed", function(self) commitFloor(self) self:ClearFocus() end)
+	floorBox:SetScript("OnEditFocusLost", commitFloor)
 	floorBox:SetScript("OnEscapePressed", function(self) self:SetText(tostring(db.goldFloor or 0)) self:ClearFocus() end)
 	local gLbl = f:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
 	gLbl:SetPoint("LEFT", floorBox, "RIGHT", 3, 0)
