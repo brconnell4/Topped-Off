@@ -126,11 +126,6 @@ end)
 
 SLASH_TOPPEDOFF1 = "/toppedoff"
 SLASH_TOPPEDOFF2 = "/to"
-SlashCmdList.TOPPEDOFF = function(msg)
-	msg = (msg or ""):lower():gsub("%s+", "")
-	if msg == "buy" then
-		ns.Restock(true)
-	elseif ns.ToggleWindow then
-		ns.ToggleWindow()
-	end
+SlashCmdList.TOPPEDOFF = function()
+	if ns.ToggleWindow then ns.ToggleWindow() end
 end

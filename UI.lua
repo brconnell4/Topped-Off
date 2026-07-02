@@ -174,7 +174,7 @@ function ns.BuildWindow()
 	-- add-item row
 	local addLbl = f:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
 	addLbl:SetPoint("TOPLEFT", 12, -90)
-	addLbl:SetText("Add: type a name, or shift-click / drag an item")
+	addLbl:SetText("Add: type a name, or shift-click / drag an item |cff808080(from your bags)|r")
 	local addBox = CreateFrame("EditBox", nil, f, "InputBoxTemplate")
 	addBox:SetSize(180, 20)
 	addBox:SetPoint("TOPLEFT", 14, -104)
@@ -258,13 +258,21 @@ function ns.BuildOptionsPage()
 	desc:SetText("Your restock list opens in its own movable window so you can use it while a vendor is open "
 		.. "(the game won't let a settings page and a vendor be open at the same time).\n\n"
 		.. "Open the window, add the items and amounts you always want in your bags, then it tops them up at any "
-		.. "vendor that sells them.  Slash: /to  to open,  /to buy  to force a top-up at a vendor.")
+		.. "vendor that sells them.  Slash:  /to  opens the window anytime.")
 
 	local btn = CreateFrame("Button", nil, o, "UIPanelButtonTemplate")
 	btn:SetSize(170, 26)
 	btn:SetPoint("TOPLEFT", 16, -120)
 	btn:SetText("Open Topped Off")
-	btn:SetScript("OnClick", function() ns.ShowWindow() end)
+	btn:SetScript("OnClick", function()
+		-- close the settings panel so it doesn't block the vendor
+		if SettingsPanel and SettingsPanel:IsShown() then
+			HideUIPanel(SettingsPanel)
+		elseif InterfaceOptionsFrame and InterfaceOptionsFrame:IsShown() then
+			HideUIPanel(InterfaceOptionsFrame)
+		end
+		ns.ShowWindow()
+	end)
 
 	if Settings and Settings.RegisterCanvasLayoutCategory then
 		local cat = Settings.RegisterCanvasLayoutCategory(o, "Topped Off")
